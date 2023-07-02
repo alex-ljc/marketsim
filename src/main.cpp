@@ -1,4 +1,4 @@
-#include "../include/LimitOrderBook.h"
+#include "LimitOrderBook.h"
 
 int main() {
     LimitOrderBook lob(100, 0.01);

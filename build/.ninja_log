@@ -1,6 +1,0 @@
-# ninja log v5
-1	619	1688319071845552554	CMakeFiles/marketsim.dir/src/LimitOrderBook.cpp.o	baa91ba270ce00a9
-2	651	1688319071879342859	CMakeFiles/marketsim.dir/src/main.cpp.o	6b866ed74ad4c9ce
-11	717	1688319141227261330	CMakeFiles/marketsim.dir/src/LimitOrderBook.cpp.o	baa91ba270ce00a9
-12	753	1688319141263141490	CMakeFiles/marketsim.dir/src/main.cpp.o	6b866ed74ad4c9ce
-11	656	1688319223675223903	CMakeFiles/marketsim.dir/src/main.cpp.o	6b866ed74ad4c9ce
