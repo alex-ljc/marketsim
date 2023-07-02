@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/Users/alexchen/Coding/Projects/marketsim/build",
+  "command": "/usr/bin/clang++ -g -std=gnu++20 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk -o CMakeFiles/MyExecutable.dir/LimitOrderBook.cpp.o -c /Users/alexchen/Coding/Projects/marketsim/LimitOrderBook.cpp",
+  "file": "/Users/alexchen/Coding/Projects/marketsim/LimitOrderBook.cpp",
+  "output": "CMakeFiles/MyExecutable.dir/LimitOrderBook.cpp.o"
+}
+]
