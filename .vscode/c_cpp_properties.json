@@ -8,7 +8,8 @@
             "defines": [],
             "macFrameworkPath": [],
             "compilerPath": "/usr/bin/g++",
-            "configurationProvider": "ms-vscode.cmake-tools"
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
         }
     ],
     "version": 4

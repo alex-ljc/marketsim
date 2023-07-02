@@ -41,35 +41,43 @@ include CMakeFiles/rules.ninja
 
 cmake_ninja_workdir = /Users/alexchen/Coding/Projects/marketsim/build/
 # =============================================================================
-# Object build statements for EXECUTABLE target MyExecutable
+# Object build statements for EXECUTABLE target marketsim
 
 
 #############################################
-# Order-only phony target for MyExecutable
+# Order-only phony target for marketsim
 
-build cmake_object_order_depends_target_MyExecutable: phony || CMakeFiles/MyExecutable.dir
+build cmake_object_order_depends_target_marketsim: phony || CMakeFiles/marketsim.dir
 
-build CMakeFiles/MyExecutable.dir/LimitOrderBook.cpp.o: CXX_COMPILER__MyExecutable_unscanned_Debug /Users/alexchen/Coding/Projects/marketsim/LimitOrderBook.cpp || cmake_object_order_depends_target_MyExecutable
-  DEP_FILE = CMakeFiles/MyExecutable.dir/LimitOrderBook.cpp.o.d
-  FLAGS = -g -std=gnu++20 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk
-  OBJECT_DIR = CMakeFiles/MyExecutable.dir
-  OBJECT_FILE_DIR = CMakeFiles/MyExecutable.dir
+build CMakeFiles/marketsim.dir/src/LimitOrderBook.cpp.o: CXX_COMPILER__marketsim_unscanned_Debug /Users/alexchen/Coding/Projects/marketsim/src/LimitOrderBook.cpp || cmake_object_order_depends_target_marketsim
+  DEP_FILE = CMakeFiles/marketsim.dir/src/LimitOrderBook.cpp.o.d
+  FLAGS = -g -std=gnu++20 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk -Wall -Wextra -O2 -Wshadow -Wformat=2 -Wfloat-equal -Wconversion -Wshift-overflow -Wcast-qual -Wcast-align -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -fsanitize=address -fsanitize=undefined -fno-sanitize-recover=undefined,integer -fstack-protector -Wno-unused-result -DL -g -Wc++11-extensions -std=c++20
+  INCLUDES = -I/Users/alexchen/Coding/Projects/marketsim/include
+  OBJECT_DIR = CMakeFiles/marketsim.dir
+  OBJECT_FILE_DIR = CMakeFiles/marketsim.dir/src
+
+build CMakeFiles/marketsim.dir/src/main.cpp.o: CXX_COMPILER__marketsim_unscanned_Debug /Users/alexchen/Coding/Projects/marketsim/src/main.cpp || cmake_object_order_depends_target_marketsim
+  DEP_FILE = CMakeFiles/marketsim.dir/src/main.cpp.o.d
+  FLAGS = -g -std=gnu++20 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk -Wall -Wextra -O2 -Wshadow -Wformat=2 -Wfloat-equal -Wconversion -Wshift-overflow -Wcast-qual -Wcast-align -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -fsanitize=address -fsanitize=undefined -fno-sanitize-recover=undefined,integer -fstack-protector -Wno-unused-result -DL -g -Wc++11-extensions -std=c++20
+  INCLUDES = -I/Users/alexchen/Coding/Projects/marketsim/include
+  OBJECT_DIR = CMakeFiles/marketsim.dir
+  OBJECT_FILE_DIR = CMakeFiles/marketsim.dir/src
 
 
 # =============================================================================
-# Link build statements for EXECUTABLE target MyExecutable
+# Link build statements for EXECUTABLE target marketsim
 
 
 #############################################
-# Link the executable MyExecutable
+# Link the executable marketsim
 
-build MyExecutable: CXX_EXECUTABLE_LINKER__MyExecutable_Debug CMakeFiles/MyExecutable.dir/LimitOrderBook.cpp.o
+build marketsim: CXX_EXECUTABLE_LINKER__marketsim_Debug CMakeFiles/marketsim.dir/src/LimitOrderBook.cpp.o CMakeFiles/marketsim.dir/src/main.cpp.o
   FLAGS = -g -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk
-  OBJECT_DIR = CMakeFiles/MyExecutable.dir
+  OBJECT_DIR = CMakeFiles/marketsim.dir
   POST_BUILD = :
   PRE_LINK = :
-  TARGET_FILE = MyExecutable
-  TARGET_PDB = MyExecutable.dbg
+  TARGET_FILE = marketsim
+  TARGET_PDB = marketsim.dbg
 
 
 #############################################
@@ -106,7 +114,7 @@ build rebuild_cache: phony CMakeFiles/rebuild_cache.util
 #############################################
 # Folder: /Users/alexchen/Coding/Projects/marketsim/build
 
-build all: phony MyExecutable
+build all: phony marketsim
 
 # =============================================================================
 # Built-in targets

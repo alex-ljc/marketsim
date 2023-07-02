@@ -64,8 +64,10 @@
         "chrono": "cpp",
         "compare": "cpp",
         "concepts": "cpp",
-        "algorithm": "cpp"
+        "algorithm": "cpp",
+        "iomanip": "cpp"
     },
     "C_Cpp.errorSquiggles": "enabled",
-    "cmake.sourceDirectory": "/Users/alexchen/Coding/Projects/marketsim"
+    "cmake.sourceDirectory": "/Users/alexchen/Coding/Projects/marketsim",
+    "C_Cpp.default.compilerPath": "/usr/bin/g++"
 }

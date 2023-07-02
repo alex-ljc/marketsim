@@ -38,9 +38,9 @@
 			[
 				{
 					"directoryIndex" : 0,
-					"id" : "MyExecutable::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-MyExecutable-Debug-bd2c076f62ae61eadba8.json",
-					"name" : "MyExecutable",
+					"id" : "marketsim::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-marketsim-Debug-906a1d916d1d71e9a5de.json",
+					"name" : "marketsim",
 					"projectIndex" : 0
 				}
 			]

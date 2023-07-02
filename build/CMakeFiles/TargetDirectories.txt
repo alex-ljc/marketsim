@@ -1,3 +1,3 @@
-/Users/alexchen/Coding/Projects/marketsim/build/CMakeFiles/MyExecutable.dir
+/Users/alexchen/Coding/Projects/marketsim/build/CMakeFiles/marketsim.dir
 /Users/alexchen/Coding/Projects/marketsim/build/CMakeFiles/edit_cache.dir
 /Users/alexchen/Coding/Projects/marketsim/build/CMakeFiles/rebuild_cache.dir
