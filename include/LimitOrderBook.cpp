@@ -1,13 +1,20 @@
+#include "LimitOrderBook.h"
+
 #include <chrono>
 #include <cmath>
 #include <deque>
 #include <iomanip>
 #include <iostream>
+#include <iterator>
 #include <map>
+#include <optional>
+#include <queue>
+#include <string>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
-#include "LimitOrderBook.h"
+#include "Exchange.h"
 
 bool isEqual(double a, double b) {
     if (std::fpclassify(a) != std::fpclassify(b)) {
@@ -37,14 +44,15 @@ bool divisible(double a, double b) {
     return (result);
 }
 
-Limit::Limit() : orders(), price(0), totalVolume(0) {};
+Limit::Limit() : orders(), price(0), totalVolume(0){};
 
-Limit::Limit(double price) : orders(), price(price), totalVolume(0) {};
+Limit::Limit(double price) : orders(), price(price), totalVolume(0){};
 
 double Limit::getPrice() { return this->price; };
 
 int Limit::getTotalVolume() { return this->totalVolume; };
 
+// Precondition: order.price == this->price
 void Limit::addOrder(Order order) {
     if (!isEqual(order.price, this->price)) {
         std::cout << "Order has wrong price: " << order.price << std::endl;
@@ -56,7 +64,10 @@ void Limit::addOrder(Order order) {
     this->totalVolume += order.volume;
     this->orders.push_back(order);
 };
+// Precondition: order is in the last position of this->orders and
+// order.totalVolume += order.volume
 
+// Precondition: order is in this->orders
 void Limit::removeOrder(int oid) {
     for (auto it = this->orders.begin(); it != this->orders.end(); ++it) {
         if (it->oid == oid) {
@@ -66,6 +77,7 @@ void Limit::removeOrder(int oid) {
         }
     }
 }
+// Postcondition: order is not in this->orders
 
 Order Limit::getOrder(int oid) {
     for (auto it = this->orders.begin(); it != this->orders.end(); ++it) {
@@ -74,10 +86,11 @@ Order Limit::getOrder(int oid) {
         }
     }
     return Order();
-} 
+}
 
 Order Limit::getPriorityOrder() { return this->orders.front(); }
 
+// Precondition: order is in this->orders
 void Limit::updateOrder(int oid, int volume) {
     for (auto it = this->orders.begin(); it != this->orders.end(); ++it) {
         if (it->oid == oid) {
@@ -92,12 +105,15 @@ void Limit::updateOrder(int oid, int volume) {
         }
     }
 }
+// Postcondition: order.volume == volume
 
-LimitOrderBook::LimitOrderBook(double max_price, double tick)
-    : bids(),
+LimitOrderBook::LimitOrderBook(Exchange& exchange, std::string symbol,
+                               double max_price, double tick)
+    : exchange(exchange),
+      bids(),
       asks(),
       orderIDs(),
-      nextOID(0),
+      symbol(symbol),
       tick(tick),
       bestBid(),
       bestAsk(max_price),
@@ -111,25 +127,22 @@ LimitOrderBook::LimitOrderBook(double max_price, double tick)
 
 // Might not be a good idea to expose Order datastruct to users and instead
 // mebe should just have them provide params
-void LimitOrderBook::addOrder(Dir direction, double price, int volume, int cid) {
-    if (price < 0) {
-        std::cout << "Price below 0: " << price << std::endl;
+void LimitOrderBook::addOrder(Order order) {
+    if (order.price < 0) {
+        std::cout << "Price below 0: " << order.price << std::endl;
         return;
-    } else if (!divisible(price, this->tick)) {
-        std::cout << "Price not rounded to tick: " << price << std::endl;
+    } else if (!divisible(order.price, this->tick)) {
+        std::cout << "Price not rounded to tick: " << order.price << std::endl;
         return;
     }
 
     // Need to handle the price > maxprice case at some point
-    size_t index = static_cast<size_t>(price / this->tick);
+    size_t index = static_cast<size_t>(order.price / this->tick);
 
-    std::time_t timestamp = std::chrono::system_clock::to_time_t(
-        std::chrono::system_clock::now());
-    int oid = nextOID++;
-    Order order = {direction, price, volume, timestamp, oid, cid};
-
-    bool bidOrderCrossedBook = (direction == Dir::BUY && price >= this->bestAsk);
-    bool askOrderCrossedBook = (direction == Dir::SELL && price <= this->bestBid);
+    bool bidOrderCrossedBook =
+        (order.direction == Dir::BUY && order.price >= this->bestAsk);
+    bool askOrderCrossedBook =
+        (order.direction == Dir::SELL && order.price <= this->bestBid);
     if (bidOrderCrossedBook) {
         matchBidOrder(&order);
     } else if (askOrderCrossedBook) {
@@ -137,19 +150,22 @@ void LimitOrderBook::addOrder(Dir direction, double price, int volume, int cid) 
     }
 
     if (order.volume > 0) {
-        if (direction == Dir::BUY) {
+        if (order.direction == Dir::BUY) {
             bids[index].addOrder(order);
             orderIDs[order.oid] = &bids[index];
-            if (price > this->bestBid) {
-                this->bestBid = price;
+            if (order.price > this->bestBid) {
+                this->bestBid = order.price;
             }
         } else {
             asks[index].addOrder(order);
             orderIDs[order.oid] = &asks[index];
-            if (price < this->bestAsk) {
-                this->bestAsk = price;
+            if (order.price < this->bestAsk) {
+                this->bestAsk = order.price;
             }
         }
+        ADD add = {order.direction, order.price, order.volume, order.oid,
+                   order.timestamp};
+        this->addLog(add);
     }
 }
 
@@ -158,9 +174,34 @@ void LimitOrderBook::cancelOrder(int oid) {
         std::cout << "Order ID not found: " << oid << std::endl;
         return;
     }
+    Order order = this->getOrder(oid);
+    CANCEL cancel = {order.direction, order.price, order.volume, oid,
+                     order.timestamp};
+    this->addLog(cancel);
     this->deleteOrder(oid);
 }
 
+void LimitOrderBook::editOrder(int oid, int volume) {
+    if (orderIDs.find(oid) == orderIDs.end()) {
+        std::cout << "Order ID not found: " << oid << std::endl;
+        return;
+    }
+    Order order = this->getOrder(oid);
+    if (volume > order.volume) {
+        std::cout << "New volume greater than order volume: " << volume
+                  << std::endl;
+        return;
+    }
+    EDIT edit = {order.direction, order.price, order.volume,
+                 volume,          oid,         order.timestamp};
+    this->addLog(edit);
+    Limit* limit = orderIDs[oid];
+    limit->updateOrder(oid, volume);
+}
+
+std::string LimitOrderBook::getSymbol() { return this->symbol; }
+
+// Wrap this in an optional!!!
 Order LimitOrderBook::getOrder(int oid) {
     if (orderIDs.find(oid) == orderIDs.end()) {
         std::cout << "Order ID not found: " << oid << std::endl;
@@ -184,87 +225,114 @@ void LimitOrderBook::printOrderBook() {
               << " ||    Price |   Qty\n";
     std::cout << "------------------------------------\n";
 
-    for (auto limit : asks) {
-        if (limit.getTotalVolume() > 0) {
+    for (auto limit = asks.rbegin(); limit != asks.rend(); ++limit) {
+        if (limit->getTotalVolume() > 0) {
             std::cout << std::left << std::setw(5) << " "
                       << " | " << std::setw(8) << " "
                       << " || " << std::right << std::setw(8) << std::fixed
-                      << std::setprecision(2) << limit.getPrice() << " | "
-                      << std::right << std::setw(5)
-                      << limit.getTotalVolume() << '\n';
+                      << std::setprecision(2) << limit->getPrice() << " | "
+                      << std::right << std::setw(5) << limit->getTotalVolume()
+                      << '\n';
         }
     }
 
     for (auto limit = bids.rbegin(); limit != bids.rend(); ++limit) {
         if (limit->getTotalVolume() > 0) {
-            std::cout << std::left << std::setw(5)
-                      << limit->getTotalVolume() << " | " << std::setw(8)
-                      << std::fixed << std::setprecision(2)
-                      << limit->getPrice() << " || " << std::right
-                      << std::setw(8) << " "
+            std::cout << std::left << std::setw(5) << limit->getTotalVolume()
+                      << " | " << std::setw(8) << std::fixed
+                      << std::setprecision(2) << limit->getPrice() << " || "
+                      << std::right << std::setw(8) << " "
                       << " | " << std::right << std::setw(5) << " " << '\n';
         }
     }
     std::cout << "------------------------------------\n";
 }
 
-void LimitOrderBook::matchBidOrder(Order *order) {
+// Precondition: Bid and ask are valid and bid->price >= ask->price
+void LimitOrderBook::processTrade(Order* bid, Order* ask, Dir aggressor) {
+    int volume = std::min(bid->volume, ask->volume);
+    bid->volume -= volume;
+    ask->volume -= volume;
+
+    std::time_t timestamp;
+    double trade_price;
+    if (aggressor == Dir::BUY) {
+        timestamp = bid->timestamp;
+        trade_price = ask->price;
+    } else {
+        timestamp = ask->timestamp;
+        trade_price = bid->price;
+    }
+
+    TRADE trade = {trade_price, volume,   timestamp,
+                   aggressor,   bid->cid, ask->cid};
+    this->addLog(trade);
+
+    if (aggressor == Dir::SELL && bid->volume == 0) {
+        this->deleteOrder(bid->oid);
+    }
+    if (aggressor == Dir::BUY && ask->volume == 0) {
+        this->deleteOrder(ask->oid);
+    }
+}
+// Postcondition: At least one of bid and ask has volume > 0 and is deleted
+
+// Precondition: order is valid and order->price <=
+// this->bestBid
+void LimitOrderBook::matchBidOrder(Order* order) {
     while (order->volume > 0 && this->bestAsk <= order->price) {
-        Limit* limit =
-            &asks[static_cast<size_t>(this->bestAsk / this->tick)];
+        Limit* limit = &asks[static_cast<size_t>(this->bestAsk / this->tick)];
         Order priorityOrder = limit->getPriorityOrder();
 
-        bool priorityOrderConsumed = priorityOrder.volume <= order->volume;
-        if (priorityOrderConsumed) {
-            order->volume -= priorityOrder.volume;
-            this->deleteOrder(priorityOrder.oid);
+        this->processTrade(order, &priorityOrder, Dir::BUY);
 
-            double newBestAsk = limit->getPrice();
-            while (limit->getTotalVolume() == 0 &&
-                    newBestAsk <= this->maxPrice) {
-                newBestAsk += this->tick;
-                limit = &asks[static_cast<size_t>(newBestAsk / this->tick)];
-            }
-            this->bestAsk = newBestAsk;
-        } else {
-            limit->updateOrder(priorityOrder.oid,
-                                priorityOrder.volume - order->volume);
-            order->volume = 0;
+        // Is there a more efficient way than just iterating to the max price?
+        // Maybe keeping track of some sort of bid and ask volume?
+        // I'm also worried because this breaks the invariant that the bestAsk
+        // is the bestAsk at all times. Maybe I can make This a critical
+        // section?
+        while (limit->getTotalVolume() == 0 &&
+               this->bestAsk <= this->maxPrice) {
+            this->bestAsk += this->tick;
+            limit = &asks[static_cast<size_t>(this->bestAsk / this->tick)];
         }
     }
 }
+// Postcondition 1: order->price > bestBid
 
+// Precondition: order is valid and order->price >= bestAsk
 void LimitOrderBook::matchAskOrder(Order* order) {
     while (order->volume > 0 && this->bestBid >= order->price) {
-        Limit* limit =
-            &bids[static_cast<size_t>(this->bestBid / this->tick)];
+        Limit* limit = &bids[static_cast<size_t>(this->bestBid / this->tick)];
         Order priorityOrder = limit->getPriorityOrder();
 
-        bool priorityOrderConsumed = priorityOrder.volume <= order->volume;
-        if (priorityOrderConsumed) {
-            order->volume -= priorityOrder.volume;
-            this->deleteOrder(priorityOrder.oid);
+        this->processTrade(order, &priorityOrder, Dir::SELL);
 
-            double newBestBid = limit->getPrice();
-            while (limit->getTotalVolume() == 0 && newBestBid >= 0) {
-                newBestBid -= this->tick;
-                limit = &bids[static_cast<size_t>(newBestBid / this->tick)];
-            }
-            this->bestBid = newBestBid;
-        } else {
-            limit->updateOrder(priorityOrder.oid,
-                                priorityOrder.volume - order->volume);
-            order->volume = 0;
+        while (limit->getTotalVolume() == 0 && this->bestBid > 0) {
+            this->bestBid -= this->tick;
+            limit = &bids[static_cast<size_t>(this->bestBid / this->tick)];
         }
     }
 }
+// Postcondition 1: order->price < bestAsk
 
+// Precondition: orderIDs[oid] exists
 void LimitOrderBook::deleteOrder(int oid) {
-    if (orderIDs.find(oid) == orderIDs.end()) {
-        std::cout << "Order ID not found: " << oid << std::endl;
-        return;
-    }
     Limit* limit = orderIDs[oid];
     limit->removeOrder(oid);
     this->orderIDs.erase(oid);
 }
+// Postcondition 1: orderIDs[oid] does not exist and order has been removed from
+// limit
+
+void LimitOrderBook::addLog(TradeLog log) { this->exchange.broadcast(log); }
+
+// What operations need to be broadcasted?
+// 1. New order
+// 2. Cancel order
+// 3. Trade
+// 4. Order Update
+// 5. Aggressor Order
+
+// I think the best way to deal with this is to send all these updates to a big
+// queue and then have another class deal with it.
