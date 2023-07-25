@@ -13,7 +13,20 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # include_directories(${INCLUDE_DIRCMAKE_CXX_FLAGS})
 set(Boost_INCLUDE_DIRS "/opt/homebrew/Cellar/boost/1.82.0_1/include")
 set(Json_INCLUDE_DIRS "/opt/homebrew/Cellar/nlohmann-json/3.11.2/include")
+set(ROOT_INCLUDE_DIRS "/opt/homebrew/Cellar/root/6.28.04/include")
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS} ${Json_INCLUDE_DIRS})
 add_subdirectory(include)
 add_subdirectory(src)
-target_compile_options(exchange PRIVATE -Wall -Wextra -O2 -Wshadow -Wformat=2 -Wfloat-equal -Wconversion -Wshift-overflow -Wcast-qual -Wcast-align -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -fno-sanitize-recover=undefined,integer -fstack-protector -Wno-unused-result -DL -g -Wc++11-extensions -std=c++20)
+
+# Set the CMP0135 policy to NEW
+cmake_policy(SET CMP0135 NEW)
+
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+)
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+

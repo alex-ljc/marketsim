@@ -2,6 +2,7 @@
 #define SendReceive_H
 
 #include <boost/asio.hpp>
+#include <boost/asio/io_context.hpp>
 #include <functional>
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -12,18 +13,17 @@ using json = nlohmann::json;
 namespace asio = boost::asio;
 
 class MulticasterSender {
-   public:
-    MulticasterSender(asio::io_context& ioContext,
-                      const std::string multicastAddress,
+  public:
+    MulticasterSender(asio::io_context &ioContext, const std::string multicastAddress,
                       unsigned short multicastPort);
 
-    void send(const json& jsonData);
+    void send(const json &jsonData);
 
     unsigned short getPort();
 
     std::string getAddress();
 
-   private:
+  private:
     asio::ip::udp::socket socket_;
     asio::ip::udp::endpoint multicastEndpoint_;
     std::string multicastAddress_;
@@ -31,11 +31,10 @@ class MulticasterSender {
 };
 
 class MulticasterReceiver {
-   public:
-    using ProcessJson = std::function<void(const json&)>;
+  public:
+    using ProcessJson = std::function<void(const json &)>;
 
-    MulticasterReceiver(asio::io_context& ioContext,
-                        const std::string multicastAddress,
+    MulticasterReceiver(asio::io_context &ioContext, const std::string multicastAddress,
                         unsigned short multicastPort, ProcessJson f);
     void receive();
 
@@ -43,7 +42,7 @@ class MulticasterReceiver {
 
     unsigned short getPort();
 
-   private:
+  private:
     asio::ip::udp::socket socket_;
     asio::ip::udp::endpoint multicastEndpoint_;
     std::string multicastAddress_;
@@ -52,13 +51,15 @@ class MulticasterReceiver {
 };
 
 class TCPClient {
-   public:
-    TCPClient(asio::io_context& ioContext, const std::string serverAddress,
-              const std::string port);
+  public:
+    TCPClient(asio::io_context &ioContext, const std::string serverAddress, const std::string port);
 
-    void send(const json& jsonData);
+    json send(const json &jsonData);
 
-   private:
+    void readMessage(std::promise<std::string> promise);
+
+  private:
+    asio::io_context &ioContext_;
     asio::ip::tcp::socket socket_;
     asio::streambuf buffer_;
     std::string serverAddress_;
@@ -66,32 +67,34 @@ class TCPClient {
 };
 
 class TCPSession : public std::enable_shared_from_this<TCPSession> {
-   public:
-    using ProcessJson = std::function<void(const json&)>;
+  public:
+    using ProcessJson = std::function<std::string(const json &)>;
     TCPSession(asio::ip::tcp::socket socket, ProcessJson f);
 
     void start();
 
-   private:
+    void send(const json &jsonData);
+
+  private:
     asio::ip::tcp::socket socket_;
     asio::streambuf buffer_;
     ProcessJson processJson_;
 };
 
 class TCPServer {
-   public:
-    using ProcessJson = std::function<void(const json&)>;
+  public:
+    using ProcessJson = std::function<std::string(const json &)>;
 
-    TCPServer(asio::io_context& ioContext, asio::ip::tcp address,
-              unsigned short port, ProcessJson f);
+    TCPServer(asio::io_context &ioContext, asio::ip::tcp address, unsigned short port,
+              ProcessJson f);
 
-    TCPServer(asio::io_context& ioContext, unsigned short port, ProcessJson f);
+    TCPServer(asio::io_context &ioContext, unsigned short port, ProcessJson f);
 
     unsigned short getPort();
 
     asio::ip::tcp getAddress();
 
-   private:
+  private:
     void startAccept();
 
     asio::ip::tcp::acceptor acceptor_;
@@ -100,4 +103,4 @@ class TCPServer {
     ProcessJson processJson_;
 };
 
-#endif  // SendReceive_H
+#endif // SendReceive_H
